@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Método de la Secante</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      background-color: #cce6ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+    }
+
+    .contenedor {
+      background-color: #fff8cc;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 600px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .resultado {
+      margin-top: 20px;
+      background: #f9f9f9;
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    td, th {
+      border: 1px solid #bbb;
+      padding: 6px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #eee;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.4rem;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <h1>Método de la Secante</h1>
+
+    <label>Función f(x) (por ejemplo: cos(x) - x)</label>
+    <input type="text" id="funcion" value="cos(x) - x">
+
+    <label>Valor inicial p₀:</label>
+    <input type="number" id="p0" value="0.5">
+
+    <label>Valor inicial p₁:</label>
+    <input type="number" id="p1" value="1">
+
+    <label>Tolerancia:</label>
+    <input type="number" id="tol" step="any" value="0.0001">
+
+    <label>Número máximo de iteraciones:</label>
+    <input type="number" id="nmax" value="20">
+
+    <button onclick="metodoSecante()">Calcular</button>
+
+    <div class="resultado" id="resultado"></div>
+  </div>
+
+  <script>
+    function evaluarFuncion(fx, x) {
+      try {
+        // Reemplazar sin "Math."
+        fx = fx.replace(/cos/g, 'Math.cos').replace(/sin/g, 'Math.sin').replace(/tan/g, 'Math.tan')
+                .replace(/log/g, 'Math.log').replace(/exp/g, 'Math.exp').replace(/sqrt/g, 'Math.sqrt');
+        
+        return eval(fx);
+      } catch (e) {
+        alert("Error al evaluar f(x). Verifica la sintaxis.");
+        return NaN;
+      }
+    }
+
+    function metodoSecante() {
+      const fxInput = document.getElementById("funcion").value;
+      let p0 = parseFloat(document.getElementById("p0").value);
+      let p1 = parseFloat(document.getElementById("p1").value);
+      const TOL = parseFloat(document.getElementById("tol").value);
+      const N = parseInt(document.getElementById("nmax").value);
+
+      let q0 = evaluarFuncion(fxInput.replace(/x/g, `(${p0})`), p0);
+      let q1 = evaluarFuncion(fxInput.replace(/x/g, `(${p1})`), p1);
+      let resultadoHTML = `<h3>Iteraciones:</h3><table><tr><th>i</th><th>p</th><th>f(p)</th><th>|p - p1|</th><th>Nota</th></tr>`;
+
+      let solucionEncontrada = false;
+      let ultimaP = p1;
+      let ultimaFp = q1;
+      let iteracionEncontrada = 0;
+
+      for (let i = 0; i < N; i++) {
+        let p, fp, error, nota = "";
+
+        if (!solucionEncontrada && q1 !== q0) {
+          p = p1 - q1 * (p1 - p0) / (q1 - q0);
+          fp = evaluarFuncion(fxInput.replace(/x/g, `(${p})`), p);
+          error = Math.abs(p - p1);
+
+          if (error < TOL) {
+            nota = "Raíz encontrada";
+            solucionEncontrada = true;
+            iteracionEncontrada = i;
+          }
+
+          // Actualizar valores
+          p0 = p1;
+          q0 = q1;
+          p1 = p;
+          q1 = fp;
+
+          ultimaP = p;
+          ultimaFp = fp;
+        } else {
+          // Repetir si ya se encontró la raíz
+          p = ultimaP;
+          fp = ultimaFp;
+          error = 0;
+          nota = "Iteración extra";
+        }
+
+        resultadoHTML += `<tr>
+          <td>${i}</td>
+          <td>${p.toFixed(6)}</td>
+          <td>${fp.toFixed(6)}</td>
+          <td>${error.toFixed(6)}</td>
+          <td>${nota}</td>
+        </tr>`;
+
+        // Continuar mostrando iteraciones
+        if (solucionEncontrada) {
+          // Continuar pero resaltar la iteración encontrada
+          if (i === iteracionEncontrada) {
+            resultadoHTML += `<tr><td><strong>${i}</strong></td><td><strong>${p.toFixed(6)}</strong></td><td><strong>${fp.toFixed(6)}</strong></td><td><strong>${error.toFixed(6)}</strong></td><td><strong>Raíz encontrada</strong></td></tr>`;
+          }
+        }
+      }
+
+      resultadoHTML += `</table>`;
+
+      if (solucionEncontrada) {
+        resultadoHTML += `<p><strong>La raíz aproximada es ${ultimaP.toFixed(6)} encontrada en la iteración número ${iteracionEncontrada + 1} con tolerancia ${TOL}.</strong></p>`;
+      } else {
+        resultadoHTML += `<p><strong>Error:</strong> El método falló después de ${N} iteraciones.</p>`;
+      }
+
+      document.getElementById("resultado").innerHTML = resultadoHTML;
+    }
+  </script>
+</body>
+</html>
